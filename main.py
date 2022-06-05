@@ -1,12 +1,16 @@
 from db_helper_task import *
 
-def showMenu (User):
+# function for showing main menu
+def showMenu(User):
     userId = User[0]
     userName = User[1]
 
+    # application menu loop till valid option is selected/satistfied
     loop = True
     while loop:
-        print("=========== What would you like to do, {}? ===========".format(userName))
+        print(
+            "\n=========== What would you like to do, {}? ===========".format(userName)
+        )
         print("[1] Add task")
         print("[2] Edit task")
         print("[3] Delete task")
@@ -17,72 +21,81 @@ def showMenu (User):
         print("[8] View category")
         print("[9] Add task to category")
         print("[0] Log-out")
-        
+
         choice = input("Enter choice: ")
-        if(choice.isnumeric() == False):
+
+        # input validity checker
+        if choice.isnumeric() == False:
             print("Please enter a valid integer!\n")
         else:
             val = int(choice)
-            if(val < 0 or val > 9):
-                 print("Please enter a valid choice!\n")
-            else:
-                if(val == 1):
+            if val < 0 or val > 9:
+                print("Please enter a valid choice!\n")
+            else:  # functions imported from db_helper_task.py
+                if val == 1:
                     addTask(userId)
-                elif(val == 2):
+                elif val == 2:
                     editTask(userId)
-                elif(val == 3):
+                elif val == 3:
                     deleteTask(userId)
-                elif(val == 4):
+                elif val == 4:
                     viewAllTasks(userId)
-                elif(val == 5):
+                elif val == 5:
                     markTaskDone(userId)
-                elif(val == 6):
+                elif val == 6:
                     addCategory(userId)
-                elif(val == 7):
+                elif val == 7:
                     deleteCategory(userId)
-                elif(val == 8):
+                elif val == 8:
                     viewCategory(userId)
-                elif(val == 9):
+                elif val == 9:
                     addTaskToCategory(userId)
-                elif(val == 0):
+                elif val == 0:  # user account logout/return to user menu
                     return False
 
+
+# function for showing user login/signup menu
 def showUserPage():
+
+    # user menu loop till a valid option is chosen/satisfied
     loop = True
     while loop:
-        print("=========== WELCOME TO THE TASK LISTER APP ===========")
+        print("\n=========== WELCOME TO THE TASK LISTER APP ===========")
         print("[1] Log-in")
         print("[2] Sign-up")
         print("[0] Shut-down Application")
 
         choice = input("Enter choice: ")
-        if(choice.isnumeric() == False):
+
+        # input validity checker
+        if choice.isnumeric() == False:
             print("Please enter a valid integer!\n")
         else:
             val = int(choice)
-            if(val < 0 or val > 2):
-                 print("Please enter a valid choice!\n")
-            elif(val == 1):
+            if val < 0 or val > 2:
+                print("Please enter a valid choice!\n")
+            elif val == 1:
                 check = userLogin()
-                if(check == False):
+                if check == False:
                     loop = True
-                else:
+                else:  # when user is already registered
                     print("User found! Redirecting to the application...")
                     menu = showMenu(check)
-                    if(menu == False):
+                    if menu == False:
                         loop = True
                     else:
                         loop = True
-            elif(val == 2):
+            elif val == 2:  # user registration
                 check = addUser()
-                if(check == False):
+                if check == False:
                     print("Sign-up not successful!")
                 else:
                     print("Sign-up successful!")
-            else:
-                print("Goodbye!")
+            else:  # exit application
+                print("Goodbye!\n")
                 closeDatabase()
                 loop = False
+
 
 # Main Section
 showUserPage()
@@ -92,3 +105,4 @@ showUserPage()
 #   MySQL implementation in Python: https://mariadb.com/resources/blog/how-to-connect-python-programs-to-mariadb/
 #   MySQL Connector/Python Developer Guide: https://dev.mysql.com/doc/connector-python/en/
 #   Indexing while printing tuples: https://stackoverflow.com/a/23886515
+#   RegEx email validation:         https://www.geeksforgeeks.org/check-if-email-address-valid-or-not-in-python/
