@@ -204,6 +204,9 @@ def addTask(userId):
     now = datetime.date.today()
     # CAUTION: taskname must be unique
     taskName = input("Please enter a task name: ")
+    if taskName == "":
+        print("Please enter a valid task name")
+        return
     taskDetails = input("Please enter your task details: ")
 
     try:
@@ -213,6 +216,7 @@ def addTask(userId):
         # taskname uniqueness checker
         if taskResult is not None:
             print("Task name already exists! Please enter another task name")
+
         else:  # add task to table: task using DML
             cur.execute(
                 "INSERT INTO task (task_name, task_details, task_date, task_completed, user_id) VALUES (?, ?, ?, ?, ?)",
@@ -379,6 +383,8 @@ def addCategory(userId):
         # categoryname uniquness checker
         if categoryResult is not None:
             print("Category already exists! Please enter another category name")
+        elif categoryName == "":
+            print("Please enter a valid category name")
         else:  # add category to taskinglistdb.category using DML
             cur.execute(
                 "INSERT INTO category (category_name, creation_date, user_id) VALUES (?, ?, ?)",
@@ -469,6 +475,15 @@ def viewCategory(userId):
         print("No categories yet!")
     else:
         print("\n=========== VIEW CATEGORY ===========")
+
+        # category list for user reference
+        cur.execute("SELECT * FROM category WHERE user_id = ?", (userId,))
+        allCategories = cur.fetchall()
+
+        if allCategories is not None:
+            for index, category in enumerate(allCategories, start=1):
+                print("{}. {}".format(index, category[1]))
+
         findCategory = input("Enter the category name that you want to view: ")
 
         # category name existence checker on table: category
@@ -542,7 +557,7 @@ def addTaskToCategory(userId):
                         elif confirm == "Y" or confirm == "y":
                             cur.execute(  # add category_id to task from table: task
                                 "UPDATE task SET category_id = ? WHERE task_id = ?",
-                                (taskResult[0], categoryResult[0]),
+                                (categoryResult[0], taskResult[0]),
                             )
                             conn.commit()
                             print("Successfully inserted Task to Category!")
