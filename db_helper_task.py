@@ -1,9 +1,11 @@
+# imports
 import mariadb
 import datetime
 import re
 
 # INTIAL SECTION
 
+# CAUTION: user and password fields must be changed according to the device of current user
 # connecting to the root user first and check if the 'tasklistingdb' database exist
 connInit = mariadb.connect(user="root", password="Arfarf123", host="localhost")
 
@@ -11,10 +13,11 @@ curInit = connInit.cursor()
 
 # function to check whether or not 'tasklistingdb' database exist. If it doesn't exist, it should create the databases along with its tables
 def databaseExist():
+    # try-except-finally containing db existence checker and db tables creation
     try:
         curInit.execute("SHOW DATABASES")
         dbList = curInit.fetchall()
-        databaseName = "tasklistingdb"
+        databaseName = "tasklistingdb"  # database name for the project
 
         # Scenario 1: Database exist
         if (databaseName,) in dbList:
@@ -25,6 +28,8 @@ def databaseExist():
             print("Database not found. Creating 'tasklistingdb' database...")
             curInit.execute("CREATE DATABASE {}".format(databaseName))
 
+            # CAUTION: user and password fields must be changed according to the device of current user
+            # genesis' connection
             # conn = mariadb.connect(
             #     user="root",
             #     password="macmac924",
@@ -34,6 +39,7 @@ def databaseExist():
 
             # cur = conn.cursor()
 
+            # mori's connection
             conn = mariadb.connect(
                 user="root",
                 password="Arfarf123",
@@ -43,6 +49,7 @@ def databaseExist():
 
             cur = conn.cursor()
 
+            # DDL statements for table: user
             userTable = """CREATE TABLE user(
                     user_id INT AUTO_INCREMENT,
                     username VARCHAR(20) NOT NULL,
@@ -54,6 +61,7 @@ def databaseExist():
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
                     """
 
+            # DDL statements for table: category
             categoryTable = """CREATE TABLE category(
                     category_id INT AUTO_INCREMENT,
                     category_name VARCHAR(15),
@@ -65,6 +73,7 @@ def databaseExist():
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
                     """
 
+            # DDL statements for table: task
             taskTable = """CREATE TABLE task(
                     task_id INT AUTO_INCREMENT,
                     task_name VARCHAR(255),
@@ -79,6 +88,8 @@ def databaseExist():
                     CONSTRAINT task_task_name_uk UNIQUE KEY (task_name)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
                     """
+
+            # MariaDB to python code execution/commit
             cur.execute(userTable)
             conn.commit()
             cur.execute(categoryTable)
@@ -97,7 +108,6 @@ def databaseExist():
 # function call
 databaseExist()
 
-
 conn = mariadb.connect(
     user="root", password="Arfarf123", host="localhost", database="tasklistingdb"
 )
@@ -106,8 +116,7 @@ cur = conn.cursor()
 
 # USER SECTION
 
-
-# function for adding data to tasklistingdb.user
+# function for adding data to table: user
 def addUser():
     print("\n=========== SIGN-UP ===========")
 
@@ -116,10 +125,11 @@ def addUser():
     # email format validation
     regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
 
-    if re.fullmatch(regex, email):
+    if re.fullmatch(regex, email):  # when email format is valid
         username = input("Please enter your username: ")
         password = input("Please enter your password: ")
 
+        # user existence checker from table: user
         try:
             cur.execute("SELECT user_id FROM user WHERE username = ?", (username,))
             usernameResult = cur.fetchone()
@@ -139,7 +149,7 @@ def addUser():
                     if password != rePassword:
                         print("Please match your password")
                     else:
-                        cur.execute(
+                        cur.execute(  # add user to table: user using DML
                             "INSERT INTO user (username, password, email) VALUES (?, ?, ?)",
                             (username, password, email),
                         )
@@ -149,7 +159,7 @@ def addUser():
         except mariadb.Error as e:
             print(f"Error: {e}")
             return False
-    else:
+    else:  # when invalid email format
         print("Invalid Email")
         return False
 
@@ -158,17 +168,19 @@ def addUser():
 def userLogin():
     cur.execute("SELECT * FROM user")
     userResult = cur.fetchone()
+
+    # taskinglistdb.user data checker
     if userResult is None:
         print("No users yet!")
         return False
-    else:
-        print("=========== LOG-IN ===========")
+    else:  # when taskinglistdb.user is not empty
+        print("\n=========== LOG-IN ===========")
 
         email = input("Please enter your email: ")
         password = input("Please enter your password: ")
 
+        # input checker: validate if email and password input is registered in taskinglistdb.user
         try:
-
             cur.execute(
                 "SELECT user_id, username FROM user WHERE email = ? AND password = ?",
                 (email, password),
@@ -184,12 +196,179 @@ def userLogin():
             print(f"Error: {e}")
 
 
+# TASK SECTION
+
+# function for adding task/data to table: task
+def addTask(userId):
+    print("\n=========== CREATE TASK ===========")
+    now = datetime.date.today()
+    # CAUTION: taskname must be unique
+    taskName = input("Please enter a task name: ")
+    taskDetails = input("Please enter your task details: ")
+
+    try:
+        cur.execute("SELECT task_id FROM task WHERE task_name = ?", (taskName,))
+        taskResult = cur.fetchone()
+
+        # taskname uniqueness checker
+        if taskResult is not None:
+            print("Task name already exists! Please enter another task name")
+        else:  # add task to table: task using DML
+            cur.execute(
+                "INSERT INTO task (task_name, task_details, task_date, task_completed, user_id) VALUES (?, ?, ?, ?, ?)",
+                (taskName, taskDetails, now, "No", userId),
+            )
+            conn.commit()
+            print("Successfully created Task!")
+    except mariadb.Error as e:
+        print(f"Error: {e}")
+
+
+# function for updating data from table: task
+def editTask(userId):
+    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
+    taskResult = cur.fetchone()
+    if taskResult is None:
+        print("No tasks yet!")
+    else:
+        print("\n=========== EDIT TASK ===========")
+        findTask = input("Enter the task name that you want to edit: ")
+
+        try:
+            cur.execute("SELECT task_id FROM task WHERE task_name = ?", (findTask,))
+            result = cur.fetchone()
+
+            # task existence checker on table: task
+            if result is not None:
+                foundTaskId = result[0]
+                newTaskName = input("Task found! Enter the new task name: ")
+                newTaskDetails = input("Enter the new task details: ")
+
+                cur.execute(  # update/modify task from table: task using DML
+                    "UPDATE task SET task_name = ?, task_details = ? WHERE task_id = ?",
+                    (newTaskName, newTaskDetails, foundTaskId),
+                )
+                conn.commit()
+                print("Successfully edited Task!")
+            else:
+                print("Task not found!")
+
+        except mariadb.Error as e:
+            print(f"Error: {e}")
+
+
+# function for deleting task/data from table: task
+def deleteTask(userId):
+    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
+    taskResult = cur.fetchone()
+
+    # task existence checker on table: task
+    if taskResult is None:
+        print("No tasks yet!")
+    else:
+        print("\n=========== DELETE TASK ===========")
+        findTask = input("Enter the task name that you want to delete: ")
+
+        try:
+            cur.execute("SELECT task_id FROM task WHERE task_name = ?", (findTask,))
+            result = cur.fetchone()
+
+            if result is not None:  # when task is found in table: task
+                foundTaskId = result[0]
+
+                # delete task from table: task using DML
+                cur.execute("DELETE FROM task WHERE task_id = ?", (foundTaskId,))
+                conn.commit()
+
+                print("Task deleted!")
+            else:
+                print("Task not found!")
+
+        except mariadb.Error as e:
+            print(f"Error: {e}")
+
+
+# function for updating task_completed from table: task
+def markTaskDone(userId):
+    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
+    taskResult = cur.fetchone()
+    if taskResult is None:
+        print("No tasks yet!")
+    else:
+        print("\n=========== MARK TASK AS DONE ===========")
+        findTask = input("Enter the task name that you want to mark as done: ")
+
+        # task existence checker on table: task
+        try:
+            cur.execute(
+                "SELECT task_id FROM task WHERE task_name = ? AND task_completed = 'No'",
+                (findTask,),
+            )
+            result = cur.fetchone()
+            if result is not None:  # when task is found
+                foundTaskId = result[0]
+
+                cur.execute(  # update task_completed from table: task
+                    "UPDATE task SET task_completed = 'Yes' WHERE task_id = ?",
+                    (foundTaskId,),
+                )
+                conn.commit()
+
+                print("Task marked as done!")
+            else:
+                print("Task not found or it has already been completed!")
+
+        except mariadb.Error as e:
+            print(f"Error: {e}")
+
+
+# function for viewing all data from table: task of the current user
+def viewAllTasks(userId):
+    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
+    taskResult = cur.fetchone()
+
+    if taskResult is None:
+        print("No tasks yet!")
+    else:
+        print("\n=========== VIEW ALL TASKS ===========")
+        try:
+            # show data from table: task using DML
+            cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
+
+            allTasks = cur.fetchall()
+            if allTasks is not None:
+                for index, task in enumerate(allTasks, start=1):
+                    # PRE I CHANGED THE TASK FORMAT, INUNA KO YUNG CATEGORY. REVERT MO NALANG YUNG CHANGES IF IT SEEMS ODD TO YOU. THANK YOU!!!
+
+                    print("{}.".format(index))
+
+                    cur.execute(
+                        "SELECT category_name FROM category WHERE category_id = ?",
+                        (task[6],),
+                    )
+                    categoryName = cur.fetchone()
+                    if categoryName is not None:
+                        print("Category name: {}".format(categoryName[0]))
+                    else:
+                        print("Category name: None")
+
+                    print("Task name: {}".format(task[1]))
+                    print("Task details: {}".format(task[2]))
+                    print("Created date: {}".format(task[3]))
+                    print("Completed: {}".format(task[4]))
+
+                    print("")
+        except mariadb.Error as e:
+            print(f"Error: {e}")
+
+
 # CATEGORY SECTION
 
-# function for adding category/data to taskinglistdb.category
+# function for adding category/data to table:category
 def addCategory(userId):
-    print("=========== ADD CATEGORY ===========")
+    print("\n=========== ADD CATEGORY ===========")
     now = datetime.date.today()
+    # CAUTION: categoryname must be unique
     categoryName = input("Please enter a category name: ")
 
     try:
@@ -197,9 +376,10 @@ def addCategory(userId):
             "SELECT category_id FROM category WHERE category_name = ?", (categoryName,)
         )
         categoryResult = cur.fetchone()
+        # categoryname uniquness checker
         if categoryResult is not None:
             print("Category already exists! Please enter another category name")
-        else:
+        else:  # add category to taskinglistdb.category using DML
             cur.execute(
                 "INSERT INTO category (category_name, creation_date, user_id) VALUES (?, ?, ?)",
                 (categoryName, now, userId),
@@ -209,14 +389,14 @@ def addCategory(userId):
         print(f"Error: {e}")
 
 
-# function for updating data from taskinglistdb.category
+# function for updating data from table:category
 def editCategory(userId):
     cur.execute("SELECT * FROM category WHERE user_id = ?", (userId,))
     categoryResult = cur.fetchone()
     if categoryResult is None:
         print("No categories yet!")
     else:
-        print("=========== EDIT CATEGORY ===========")
+        print("\n=========== EDIT CATEGORY ===========")
         findCategory = input("Enter the category name that you want to edit: ")
 
         try:
@@ -225,11 +405,12 @@ def editCategory(userId):
                 (findCategory,),
             )
             result = cur.fetchone()
+            # category existence checker on taskinglistdb.category
             if result is not None:
                 foundCategoryId = result[0]
                 newCategory = input("Category found! Enter the new category name: ")
 
-                cur.execute(
+                cur.execute(  # update/modify category from taskinglistdb.category using DML
                     "UPDATE category SET category_name = ? WHERE category_id = ?",
                     (
                         newCategory,
@@ -244,15 +425,17 @@ def editCategory(userId):
             print(f"Error: {e}")
 
 
-# function for deleting category/data from taskinglistdb.category
+# function for deleting category/data from table:category
 def deleteCategory(userId):
     cur.execute("SELECT * FROM category WHERE user_id = ?", (userId,))
     categoryResult = cur.fetchone()
+
+    # category existence checker on table: category
     if categoryResult is None:
         print("No categories yet!")
     else:
 
-        print("=========== DELETE CATEGORY ===========")
+        print("\n=========== DELETE CATEGORY ===========")
         findCategory = input("Enter the category name that you want to delete: ")
 
         try:
@@ -261,9 +444,10 @@ def deleteCategory(userId):
                 (findCategory,),
             )
             result = cur.fetchone()
-            if result is not None:
+            if result is not None:  # when category is found in table: category
                 foundCategoryId = result[0]
 
+                # delete category from table: category using DML
                 cur.execute(
                     "DELETE FROM category WHERE category_id = ?", (foundCategoryId,)
                 )
@@ -284,16 +468,17 @@ def viewCategory(userId):
     if categoryResult is None:
         print("No categories yet!")
     else:
-        print("=========== VIEW CATEGORY ===========")
+        print("\n=========== VIEW CATEGORY ===========")
         findCategory = input("Enter the category name that you want to view: ")
 
+        # category name existence checker on table: category
         try:
             cur.execute(
                 "SELECT category_id FROM category WHERE category_name = ?",
                 (findCategory,),
             )
             result = cur.fetchone()
-            if result is not None:
+            if result is not None:  # when found
                 foundCategoryId = result[0]
 
                 cur.execute(
@@ -318,36 +503,44 @@ def addTaskToCategory(userId):
     categoryResult = cur.fetchone()
     cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
     taskResult = cur.fetchone()
+    # checker for data existence in table: category
     if categoryResult is None:
         print("No categories yet!")
     elif taskResult is None:
         print("No tasks yet!")
     else:
-        print("=========== ADD TASK TO CATEGORY ===========")
+        print("\n=========== ADD TASK TO CATEGORY ===========")
+        # task finder from table: task
         findTask = input("Enter the task name: ")
 
         try:
+
             cur.execute("SELECT task_id FROM task WHERE task_name = ?", (findTask,))
             taskResult = cur.fetchone()
-            if taskResult is not None:
 
+            if taskResult is not None:
+                # category finder from table: category
                 findCategory = input("Enter the category: ")
                 cur.execute(
                     "SELECT category_id FROM category WHERE category_name = ?",
                     (findCategory,),
                 )
                 categoryResult = cur.fetchone()
+
                 if categoryResult is not None:
+                    # loop till user select a valid option
                     while True:
+                        # confirmation for adding a task to a category
                         print(
                             "Category found! Do you want to add your task to this category?"
                         )
                         confirm = input("Y/N: ")
+
                         if confirm == "N" or confirm == "n":
-                            print("Add-Task-To-Categiry stopped")
+                            print("Add-Task-To-Category stopped")
                             break
                         elif confirm == "Y" or confirm == "y":
-                            cur.execute(
+                            cur.execute(  # add category_id to task from table: task
                                 "UPDATE task SET category_id = ? WHERE task_id = ?",
                                 (taskResult[0], categoryResult[0]),
                             )
@@ -361,156 +554,6 @@ def addTaskToCategory(userId):
             else:
                 print("Task not found!")
 
-        except mariadb.Error as e:
-            print(f"Error: {e}")
-
-
-# TASK SECTION
-
-# function for adding task/data to taskinglistdb.task
-def addTask(userId):
-    print("=========== CREATE TASK ===========")
-    now = datetime.date.today()
-    taskName = input("Please enter a task name: ")
-    taskDetails = input("Please enter your task details: ")
-
-    try:
-        cur.execute("SELECT task_id FROM task WHERE task_name = ?", (taskName,))
-        taskResult = cur.fetchone()
-        if taskResult is not None:
-            print("Task name already exists! Please enter another task name")
-        else:
-            cur.execute(
-                "INSERT INTO task (task_name, task_details, task_date, task_completed, user_id) VALUES (?, ?, ?, ?, ?)",
-                (taskName, taskDetails, now, "No", userId),
-            )
-            conn.commit()
-            print("Successfully created Task!")
-    except mariadb.Error as e:
-        print(f"Error: {e}")
-
-
-# function for updating data from taskinglistdb.task
-def editTask(userId):
-    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
-    taskResult = cur.fetchone()
-    if taskResult is None:
-        print("No tasks yet!")
-    else:
-        print("=========== EDIT TASK ===========")
-        findTask = input("Enter the task name that you want to edit: ")
-
-        try:
-            cur.execute("SELECT task_id FROM task WHERE task_name = ?", (findTask,))
-            result = cur.fetchone()
-            if result is not None:
-                foundTaskId = result[0]
-                newTaskName = input("Task found! Enter the new task name: ")
-                newTaskDetails = input("Enter the new task details: ")
-
-                cur.execute(
-                    "UPDATE task SET task_name = ?, task_details = ? WHERE task_id = ?",
-                    (newTaskName, newTaskDetails, foundTaskId),
-                )
-                conn.commit()
-                print("Successfully edited Task!")
-            else:
-                print("Task not found!")
-
-        except mariadb.Error as e:
-            print(f"Error: {e}")
-
-
-# function for deleting task/data from taskinglistdb.task
-def deleteTask(userId):
-    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
-    taskResult = cur.fetchone()
-    if taskResult is None:
-        print("No tasks yet!")
-    else:
-        print("=========== DELETE TASK ===========")
-        findTask = input("Enter the task name that you want to delete: ")
-
-        try:
-            cur.execute("SELECT task_id FROM task WHERE task_name = ?", (findTask,))
-            result = cur.fetchone()
-            if result is not None:
-                foundTaskId = result[0]
-
-                cur.execute("DELETE FROM task WHERE task_id = ?", (foundTaskId,))
-                conn.commit()
-
-                print("Task deleted!")
-            else:
-                print("Task not found!")
-
-        except mariadb.Error as e:
-            print(f"Error: {e}")
-
-
-# function for updating task_completed from taskinglistdb.task
-def markTaskDone(userId):
-    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
-    taskResult = cur.fetchone()
-    if taskResult is None:
-        print("No tasks yet!")
-    else:
-        print("=========== MARK TASK AS DONE ===========")
-        findTask = input("Enter the task name that you want to mark as done: ")
-
-        try:
-            cur.execute(
-                "SELECT task_id FROM task WHERE task_name = ? AND task_completed = 'No'",
-                (findTask,),
-            )
-            result = cur.fetchone()
-            if result is not None:
-                foundTaskId = result[0]
-
-                cur.execute(
-                    "UPDATE task SET task_completed = 'Yes' WHERE task_id = ?",
-                    (foundTaskId,),
-                )
-                conn.commit()
-
-                print("Task marked as done!")
-            else:
-                print("Task not found or it has already been completed!")
-
-        except mariadb.Error as e:
-            print(f"Error: {e}")
-
-
-# function for viewing all data from taskinglistdb.task
-def viewAllTasks(userId):
-    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
-    taskResult = cur.fetchone()
-    if taskResult is None:
-        print("No tasks yet!")
-    else:
-        print("=========== VIEW ALL TASKS ===========")
-        try:
-            cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
-
-            allTasks = cur.fetchall()
-            if allTasks is not None:
-                for index, task in enumerate(allTasks, start=1):
-                    print("{}.".format(index))
-                    print("Task name: {}".format(task[1]))
-                    print("Task details: {}".format(task[2]))
-                    print("Created date: {}".format(task[3]))
-                    print("Completed: {}".format(task[4]))
-
-                    cur.execute(
-                        "SELECT category_name FROM category WHERE category_id = ?",
-                        (task[6],),
-                    )
-                    categoryName = cur.fetchone()
-                    if categoryName is not None:
-                        print("Category name: {}".format(categoryName[0]))
-                    else:
-                        print("Category name: None")
-                    print("")
         except mariadb.Error as e:
             print(f"Error: {e}")
 

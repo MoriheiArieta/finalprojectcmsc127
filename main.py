@@ -5,9 +5,12 @@ def showMenu(User):
     userId = User[0]
     userName = User[1]
 
+    # application menu loop till valid option is selected/satistfied
     loop = True
     while loop:
-        print("=========== What would you like to do, {}? ===========".format(userName))
+        print(
+            "\n=========== What would you like to do, {}? ===========".format(userName)
+        )
         print("[1] Add task")
         print("[2] Edit task")
         print("[3] Delete task")
@@ -20,13 +23,15 @@ def showMenu(User):
         print("[0] Log-out")
 
         choice = input("Enter choice: ")
+
+        # input validity checker
         if choice.isnumeric() == False:
             print("Please enter a valid integer!\n")
         else:
             val = int(choice)
             if val < 0 or val > 9:
                 print("Please enter a valid choice!\n")
-            else:
+            else:  # functions imported from db_helper_task.py
                 if val == 1:
                     addTask(userId)
                 elif val == 2:
@@ -45,12 +50,14 @@ def showMenu(User):
                     viewCategory(userId)
                 elif val == 9:
                     addTaskToCategory(userId)
-                elif val == 0:
+                elif val == 0:  # user account logout/return to user menu
                     return False
 
 
 # function for showing user login/signup menu
 def showUserPage():
+
+    # user menu loop till a valid option is chosen/satisfied
     loop = True
     while loop:
         print("\n=========== WELCOME TO THE TASK LISTER APP ===========")
@@ -59,6 +66,8 @@ def showUserPage():
         print("[0] Shut-down Application")
 
         choice = input("Enter choice: ")
+
+        # input validity checker
         if choice.isnumeric() == False:
             print("Please enter a valid integer!\n")
         else:
@@ -69,20 +78,20 @@ def showUserPage():
                 check = userLogin()
                 if check == False:
                     loop = True
-                else:
+                else:  # when user is already registered
                     print("User found! Redirecting to the application...")
                     menu = showMenu(check)
                     if menu == False:
                         loop = True
                     else:
                         loop = True
-            elif val == 2:
+            elif val == 2:  # user registration
                 check = addUser()
                 if check == False:
                     print("Sign-up not successful!")
                 else:
                     print("Sign-up successful!")
-            else:
+            else:  # exit application
                 print("Goodbye!\n")
                 closeDatabase()
                 loop = False
