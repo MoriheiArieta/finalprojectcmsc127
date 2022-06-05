@@ -30,24 +30,24 @@ def databaseExist():
 
             # CAUTION: user and password fields must be changed according to the device of current user
             # genesis' connection
-            conn = mariadb.connect(
-                user="root",
-                password="macmac924",
-                host="localhost",
-                database=databaseName,
-            )
-
-            cur = conn.cursor()
-
-            # # mori's connection
             # conn = mariadb.connect(
             #     user="root",
-            #     password="Arfarf123",
+            #     password="macmac924",
             #     host="localhost",
             #     database=databaseName,
             # )
 
             # cur = conn.cursor()
+
+            # # mori's connection
+            conn = mariadb.connect(
+                user="root",
+                password="Arfarf123",
+                host="localhost",
+                database=databaseName,
+            )
+
+            cur = conn.cursor()
 
             # DDL statements for table: user
             userTable = """CREATE TABLE user(
