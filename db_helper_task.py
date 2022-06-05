@@ -7,7 +7,7 @@ import re
 
 # CAUTION: user and password fields must be changed according to the device of current user
 # connecting to the root user first and check if the 'tasklistingdb' database exist
-connInit = mariadb.connect(user="root", password="Arfarf123", host="localhost")
+connInit = mariadb.connect(user="root", password="macmac924", host="localhost")
 
 curInit = connInit.cursor()
 
@@ -30,24 +30,24 @@ def databaseExist():
 
             # CAUTION: user and password fields must be changed according to the device of current user
             # genesis' connection
-            # conn = mariadb.connect(
-            #     user="root",
-            #     password="macmac924",
-            #     host="localhost",
-            #     database=databaseName,
-            # )
-
-            # cur = conn.cursor()
-
-            # mori's connection
             conn = mariadb.connect(
                 user="root",
-                password="Arfarf123",
+                password="macmac924",
                 host="localhost",
                 database=databaseName,
             )
 
             cur = conn.cursor()
+
+            # # mori's connection
+            # conn = mariadb.connect(
+            #     user="root",
+            #     password="Arfarf123",
+            #     host="localhost",
+            #     database=databaseName,
+            # )
+
+            # cur = conn.cursor()
 
             # DDL statements for table: user
             userTable = """CREATE TABLE user(
@@ -109,7 +109,7 @@ def databaseExist():
 databaseExist()
 
 conn = mariadb.connect(
-    user="root", password="Arfarf123", host="localhost", database="tasklistingdb"
+    user="root", password="macmac924", host="localhost", database="tasklistingdb"
 )
 cur = conn.cursor()
 
@@ -160,7 +160,7 @@ def addUser():
             print(f"Error: {e}")
             return False
     else:  # when invalid email format
-        print("Invalid Email")
+        print("Invalid Email! Please use an email domain")
         return False
 
 
@@ -325,6 +325,64 @@ def markTaskDone(userId):
         except mariadb.Error as e:
             print(f"Error: {e}")
 
+# function for viewing date-categorized (day/month) data from table: task of the current user
+def viewTask(userId):
+    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
+    taskResult = cur.fetchone()
+    if taskResult is None:
+        print("No tasks yet!")
+    else:
+        try:
+            monthName = ""
+            dayOfmonth = ""
+
+            for month in range (1, 12):
+                for day in range (1, 31):
+                    cur.execute("SELECT task_name, task_details, task_date, task_completed, DATE_FORMAT(task_date, '%M'), DATE_FORMAT(task_date, '%D'), category_id from task WHERE user_id = ? AND MONTH(task_date) = ? AND DAY(task_date) = ?", (userId, month, day))
+                    allTasks = cur.fetchall()
+                    if allTasks is None:
+                        continue
+                    else:
+                        for index, task in enumerate(allTasks, start=1):
+                            if (monthName == task[4] and dayOfmonth == task[5]):
+                                print("{}.".format(index))
+                                print("Task name: {}".format(task[0]))
+                                print("Task details: {}".format(task[1]))
+                                print("Created date: {}".format(task[2]))
+                                print("Completed: {}".format(task[3]))
+
+                                cur.execute(
+                                    "SELECT category_name FROM category WHERE category_id = ?",
+                                    (task[6],),
+                                )
+                                categoryName = cur.fetchone()
+                                if categoryName is not None:
+                                    print("Category name: {}".format(categoryName[0]))
+                                else:
+                                    print("Category name: None")
+                            else:
+                                monthName = task[4]
+                                dayOfmonth = task[5]
+                                print("=========== VIEW TASK ({} {}) ===========".format(task[4], task[5]))
+                                print("{}.".format(index))
+                                print("Task name: {}".format(task[0]))
+                                print("Task details: {}".format(task[1]))
+                                print("Created date: {}".format(task[2]))
+                                print("Completed: {}".format(task[3]))
+
+                                cur.execute(
+                                    "SELECT category_name FROM category WHERE category_id = ?",
+                                    (task[6],),
+                                )
+                                categoryName = cur.fetchone()
+                                if categoryName is not None:
+                                    print("Category name: {}".format(categoryName[0]))
+                                else:
+                                    print("Category name: None")
+
+        except mariadb.Error as e:
+            print(f"Error: {e}")
+
 
 # function for viewing all data from table: task of the current user
 def viewAllTasks(userId):
@@ -360,7 +418,6 @@ def viewAllTasks(userId):
                     print("Created date: {}".format(task[3]))
                     print("Completed: {}".format(task[4]))
 
-                    print("")
         except mariadb.Error as e:
             print(f"Error: {e}")
 
@@ -390,6 +447,7 @@ def addCategory(userId):
                 (categoryName, now, userId),
             )
             conn.commit()
+            print("Successfully added category!")
     except mariadb.Error as e:
         print(f"Error: {e}")
 
