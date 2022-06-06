@@ -5,7 +5,7 @@ def showMenu(User):
     userId = User[0]
     userName = User[1]
 
-    # application menu loop till valid option is selected/satistfied
+    # task listing application menu loop until valid option is selected/satistfied
     loop = True
     while loop:
         print("")
@@ -103,6 +103,10 @@ def showUserPage():
 
 # Main Section
 showUserPage()
+
+# Group 1:
+# Mark Genesis C. Topinio
+# Glenn M. Arieta
 
 
 # References:
