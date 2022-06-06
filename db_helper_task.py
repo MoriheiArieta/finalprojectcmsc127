@@ -30,24 +30,24 @@ def databaseExist():
 
             # CAUTION: user and password fields must be changed according to the device of current user
             # genesis' connection
-            # conn = mariadb.connect(
-            #     user="root",
-            #     password="macmac924",
-            #     host="localhost",
-            #     database=databaseName,
-            # )
-
-            # cur = conn.cursor()
-
-            # # mori's connection
             conn = mariadb.connect(
                 user="root",
-                password="Arfarf123",
+                password="macmac924",
                 host="localhost",
                 database=databaseName,
             )
 
             cur = conn.cursor()
+
+            # # mori's connection
+            # conn = mariadb.connect(
+            #     user="root",
+            #     password="Arfarf123",
+            #     host="localhost",
+            #     database=databaseName,
+            # )
+
+            # cur = conn.cursor()
 
             # DDL statements for table: user
             userTable = """CREATE TABLE user(
@@ -253,6 +253,25 @@ def editTask(userId):
                     (newTaskName, newTaskDetails, foundTaskId),
                 )
                 conn.commit()
+
+                while True: # user has option to undo 'mark task as done' if needed
+                    print("Is the task done?")
+                    markDone = input("Y/N: ")
+                    if markDone == "N" or markDone == "n":
+                        cur.execute(  # update task_completed from table: task
+                        "UPDATE task SET task_completed = 'No' WHERE task_id = ?",
+                        (foundTaskId,),
+                        )
+                        break
+                    elif markDone == "Y" or markDone == "y":
+                        cur.execute(  # update task_completed from table: task
+                            "UPDATE task SET task_completed = 'Yes' WHERE task_id = ?",
+                            (foundTaskId,),
+                        )
+                        break
+                    else:
+                        print("Invalid output. Y/N?")
+                conn.commit()
                 print("Successfully edited Task!")
             else:
                 print("Task not found!")
@@ -346,11 +365,6 @@ def viewTask(userId):
                         for index, task in enumerate(allTasks, start=1):
                             if (monthName == task[4] and dayOfmonth == task[5]):
                                 print("{}.".format(index))
-                                print("Task name: {}".format(task[0]))
-                                print("Task details: {}".format(task[1]))
-                                print("Created date: {}".format(task[2]))
-                                print("Completed: {}".format(task[3]))
-
                                 cur.execute(
                                     "SELECT category_name FROM category WHERE category_id = ?",
                                     (task[6],),
@@ -360,16 +374,17 @@ def viewTask(userId):
                                     print("Category name: {}".format(categoryName[0]))
                                 else:
                                     print("Category name: None")
+                                print("Task name: {}".format(task[0]))
+                                print("Task details: {}".format(task[1]))
+                                print("Created date: {}".format(task[2]))
+                                print("Completed: {}".format(task[3]))
+
+                                
                             else:
                                 monthName = task[4]
                                 dayOfmonth = task[5]
                                 print("=========== VIEW TASK ({} {}) ===========".format(task[4], task[5]))
                                 print("{}.".format(index))
-                                print("Task name: {}".format(task[0]))
-                                print("Task details: {}".format(task[1]))
-                                print("Created date: {}".format(task[2]))
-                                print("Completed: {}".format(task[3]))
-
                                 cur.execute(
                                     "SELECT category_name FROM category WHERE category_id = ?",
                                     (task[6],),
@@ -379,6 +394,10 @@ def viewTask(userId):
                                     print("Category name: {}".format(categoryName[0]))
                                 else:
                                     print("Category name: None")
+                                print("Task name: {}".format(task[0]))
+                                print("Task details: {}".format(task[1]))
+                                print("Created date: {}".format(task[2]))
+                                print("Completed: {}".format(task[3]))
 
         except mariadb.Error as e:
             print(f"Error: {e}")

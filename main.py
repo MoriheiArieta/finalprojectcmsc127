@@ -73,11 +73,11 @@ def showUserPage():
 
         # input validity checker
         if choice.isnumeric() == False:
-            print("Please enter a valid integer!\n")
+            print("Please enter a valid integer!")
         else:
             val = int(choice)
             if val < 0 or val > 2:
-                print("Please enter a valid choice!\n")
+                print("Please enter a valid choice!")
             elif val == 1:
                 check = userLogin()
                 if check == False:
