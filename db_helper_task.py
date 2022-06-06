@@ -39,7 +39,7 @@ def databaseExist():
 
             # cur = conn.cursor()
 
-            # mori's connection
+            # # mori's connection
             conn = mariadb.connect(
                 user="root",
                 password="Arfarf123",
@@ -108,6 +108,7 @@ def databaseExist():
 # function call
 databaseExist()
 
+# CAUTION: user and password fields must be changed according to the device of current user
 conn = mariadb.connect(
     user="root", password="Arfarf123", host="localhost", database="tasklistingdb"
 )
@@ -160,7 +161,7 @@ def addUser():
             print(f"Error: {e}")
             return False
     else:  # when invalid email format
-        print("Invalid Email")
+        print("Invalid Email! Please use an email domain")
         return False
 
 
@@ -235,6 +236,7 @@ def editTask(userId):
     if taskResult is None:
         print("No tasks yet!")
     else:
+
         print("\n=========== EDIT TASK ===========")
         findTask = input("Enter the task name that you want to edit: ")
 
@@ -252,6 +254,25 @@ def editTask(userId):
                     "UPDATE task SET task_name = ?, task_details = ? WHERE task_id = ?",
                     (newTaskName, newTaskDetails, foundTaskId),
                 )
+                conn.commit()
+
+                while True:  # user has option to undo 'mark task as done' if needed
+                    print("Is the task done?")
+                    markDone = input("Y/N: ")
+                    if markDone == "N" or markDone == "n":
+                        cur.execute(  # update task_completed from table: task
+                            "UPDATE task SET task_completed = 'No' WHERE task_id = ?",
+                            (foundTaskId,),
+                        )
+                        break
+                    elif markDone == "Y" or markDone == "y":
+                        cur.execute(  # update task_completed from table: task
+                            "UPDATE task SET task_completed = 'Yes' WHERE task_id = ?",
+                            (foundTaskId,),
+                        )
+                        break
+                    else:
+                        print("Invalid output. Y/N?")
                 conn.commit()
                 print("Successfully edited Task!")
             else:
@@ -326,6 +347,71 @@ def markTaskDone(userId):
             print(f"Error: {e}")
 
 
+# function for viewing date-categorized (day/month) data from table: task of the current user
+def viewTask(userId):
+    cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
+    taskResult = cur.fetchone()
+    if taskResult is None:
+        print("No tasks yet!")
+    else:
+        try:
+            monthName = ""
+            dayOfmonth = ""
+
+            for month in range(1, 12):
+                for day in range(1, 31):
+                    cur.execute(
+                        "SELECT task_name, task_details, task_date, task_completed, DATE_FORMAT(task_date, '%M'), DATE_FORMAT(task_date, '%D'), category_id from task WHERE user_id = ? AND MONTH(task_date) = ? AND DAY(task_date) = ?",
+                        (userId, month, day),
+                    )
+                    allTasks = cur.fetchall()
+                    if allTasks is None:
+                        continue
+                    else:
+                        for index, task in enumerate(allTasks, start=1):
+                            if monthName == task[4] and dayOfmonth == task[5]:
+                                print("{}.".format(index))
+                                cur.execute(
+                                    "SELECT category_name FROM category WHERE category_id = ?",
+                                    (task[6],),
+                                )
+                                categoryName = cur.fetchone()
+                                if categoryName is not None:
+                                    print("Category name: {}".format(categoryName[0]))
+                                else:
+                                    print("Category name: None")
+                                print("Task name: {}".format(task[0]))
+                                print("Task details: {}".format(task[1]))
+                                print("Created date: {}".format(task[2]))
+                                print("Completed: {}".format(task[3]))
+
+                            else:
+                                monthName = task[4]
+                                dayOfmonth = task[5]
+                                print(
+                                    "=========== VIEW TASK ({} {}) ===========".format(
+                                        task[4], task[5]
+                                    )
+                                )
+                                print("{}.".format(index))
+                                cur.execute(
+                                    "SELECT category_name FROM category WHERE category_id = ?",
+                                    (task[6],),
+                                )
+                                categoryName = cur.fetchone()
+                                if categoryName is not None:
+                                    print("Category name: {}".format(categoryName[0]))
+                                else:
+                                    print("Category name: None")
+                                print("Task name: {}".format(task[0]))
+                                print("Task details: {}".format(task[1]))
+                                print("Created date: {}".format(task[2]))
+                                print("Completed: {}".format(task[3]))
+
+        except mariadb.Error as e:
+            print(f"Error: {e}")
+
+
 # function for viewing all data from table: task of the current user
 def viewAllTasks(userId):
     cur.execute("SELECT * FROM task WHERE user_id = ?", (userId,))
@@ -342,7 +428,6 @@ def viewAllTasks(userId):
             allTasks = cur.fetchall()
             if allTasks is not None:
                 for index, task in enumerate(allTasks, start=1):
-                    # PRE I CHANGED THE TASK FORMAT, INUNA KO YUNG CATEGORY. REVERT MO NALANG YUNG CHANGES IF IT SEEMS ODD TO YOU. THANK YOU!!!
 
                     print("{}.".format(index))
 
@@ -361,7 +446,6 @@ def viewAllTasks(userId):
                     print("Created date: {}".format(task[3]))
                     print("Completed: {}".format(task[4]))
 
-                    print("")
         except mariadb.Error as e:
             print(f"Error: {e}")
 
@@ -391,6 +475,7 @@ def addCategory(userId):
                 (categoryName, now, userId),
             )
             conn.commit()
+            print("Successfully added category!")
     except mariadb.Error as e:
         print(f"Error: {e}")
 
@@ -411,12 +496,12 @@ def editCategory(userId):
                 (findCategory,),
             )
             result = cur.fetchone()
-            # category existence checker on taskinglistdb.category
+            # category existence checker in table: category
             if result is not None:
                 foundCategoryId = result[0]
                 newCategory = input("Category found! Enter the new category name: ")
 
-                cur.execute(  # update/modify category from taskinglistdb.category using DML
+                cur.execute(  # update/modify category from table:category using DML
                     "UPDATE category SET category_name = ? WHERE category_id = ?",
                     (
                         newCategory,

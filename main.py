@@ -5,21 +5,21 @@ def showMenu(User):
     userId = User[0]
     userName = User[1]
 
-    # application menu loop till valid option is selected/satistfied
+    # task listing application menu loop until valid option is selected/satistfied
     loop = True
     while loop:
-        print(
-            "\n=========== What would you like to do, {}? ===========".format(userName)
-        )
+        print("")
+        print("=========== What would you like to do, {}? ===========".format(userName))
         print("[1] Add task")
         print("[2] Edit task")
         print("[3] Delete task")
-        print("[4] View all tasks")
-        print("[5] Mark task as done")
-        print("[6] Add category")
-        print("[7] Delete category")
-        print("[8] View category")
-        print("[9] Add task to category")
+        print("[4] View tasks per month/day")
+        print("[5] View all tasks")
+        print("[6] Mark task as done")
+        print("[7] Add category")
+        print("[8] Delete category")
+        print("[9] View category")
+        print("[10] Add task to category")
         print("[0] Log-out")
 
         choice = input("Enter choice: ")
@@ -29,9 +29,9 @@ def showMenu(User):
             print("Please enter a valid integer!\n")
         else:
             val = int(choice)
-            if val < 0 or val > 9:
+            if val < 0 or val > 10:
                 print("Please enter a valid choice!\n")
-            else:  # functions imported from db_helper_task.py
+            else:
                 if val == 1:
                     addTask(userId)
                 elif val == 2:
@@ -39,18 +39,20 @@ def showMenu(User):
                 elif val == 3:
                     deleteTask(userId)
                 elif val == 4:
-                    viewAllTasks(userId)
+                    viewTask(userId)
                 elif val == 5:
-                    markTaskDone(userId)
+                    viewAllTasks(userId)
                 elif val == 6:
-                    addCategory(userId)
+                    markTaskDone(userId)
                 elif val == 7:
-                    deleteCategory(userId)
+                    addCategory(userId)
                 elif val == 8:
-                    viewCategory(userId)
+                    deleteCategory(userId)
                 elif val == 9:
+                    viewCategory(userId)
+                elif val == 10:
                     addTaskToCategory(userId)
-                elif val == 0:  # user account logout/return to user menu
+                elif val == 0:
                     return False
 
 
@@ -69,11 +71,11 @@ def showUserPage():
 
         # input validity checker
         if choice.isnumeric() == False:
-            print("Please enter a valid integer!\n")
+            print("Please enter a valid integer!")
         else:
             val = int(choice)
             if val < 0 or val > 2:
-                print("Please enter a valid choice!\n")
+                print("Please enter a valid choice!")
             elif val == 1:
                 check = userLogin()
                 if check == False:
@@ -92,13 +94,17 @@ def showUserPage():
                 else:
                     print("Sign-up successful!")
             else:  # exit application
-                print("Goodbye!\n")
+                print("Goodbye! Thanks for using the Task Listing App!\n")
                 closeDatabase()
                 loop = False
 
 
 # Main Section
 showUserPage()
+
+# Group 1:
+# Mark Genesis C. Topinio
+# Glenn M. Arieta
 
 
 # References:
